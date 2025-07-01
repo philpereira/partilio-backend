@@ -1,4 +1,27 @@
 ﻿// Tipos principais do sistema
+
+// Tipos de request/response globais
+declare global {
+  interface AuthenticatedRequest {
+    user: any;
+    userId: string;
+    params: any;
+    query: any;
+    body: any;
+    headers: any;
+    file?: any;
+    files?: any;
+  }
+
+  interface ApiResponse<T = any> {
+    success: boolean;
+    data?: T;
+    message?: string;
+    error?: string;
+    metadata?: any;
+  }
+}
+
 export interface AuthenticatedRequest {
   user: any;
   userId: string;

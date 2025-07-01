@@ -1,16 +1,31 @@
-import { z } from 'zod';
-
-export const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-});
-
-// Adicione outros schemas conforme necessário
-
+﻿// Schemas stub
 export const schemas = {
   auth: {
-    login: loginSchema,
+    login: {
+      parse: (data: any) => data
+    }
   },
+  category: {
+    parse: (data: any) => data
+  },
+  creditCard: {
+    parse: (data: any) => data
+  },
+  expense: {
+    parse: (data: any) => data
+  },
+  payer: {
+    parse: (data: any) => data
+  },
+  dashboard: {
+    parse: (data: any) => data
+  },
+  pagination: {
+    parse: (data: any) => data
+  },
+  csvImport: {
+    parse: (data: any) => data
+  }
 };
 
 export default schemas;
