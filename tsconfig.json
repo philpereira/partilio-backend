@@ -1,30 +1,27 @@
 {
-  "name": "partilio-backend",
-  "version": "1.0.0",
-  "description": "Backend para app de gestão de despesas familiares",
-  "main": "dist/server.js",
-  "scripts": {
-    "build": "npx prisma generate && tsc",
-    "start": "node dist/server.js",
-    "postinstall": "npx prisma generate"
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": false,
+    "removeComments": true,
+    "types": ["node"]
   },
-  "dependencies": {
-    "@prisma/client": "^5.7.1",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "zod": "^3.22.4",
-    "compression": "^1.7.4",
-    "morgan": "^1.10.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.3.3",
-    "prisma": "^5.7.1",
-    "@types/node": "^20.10.5"
-  },
-  "engines": {
-    "node": "18.x"
-  }
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
