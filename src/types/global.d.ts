@@ -1,10 +1,14 @@
-declare const process: {
-  env: { [key: string]: string | undefined };
-  uptime: () => number;
-};
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NODE_ENV: 'development' | 'production' | 'test';
+      PORT?: string;
+      DATABASE_URL: string;
+      JWT_SECRET: string;
+      JWT_EXPIRES_IN?: string;
+      CORS_ORIGIN?: string;
+    }
+  }
+}
 
-declare const console: {
-  log: (...args: any[]) => void;
-  error: (...args: any[]) => void;
-  warn: (...args: any[]) => void;
-};
+export {};
