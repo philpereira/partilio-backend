@@ -1,3 +1,12 @@
+
+#!/bin/bash
+
+echo "🔧 CORREÇÃO DEFINITIVA DOS ERROS DE DEPLOY"
+echo "=========================================="
+
+# 1. Corrigir tsconfig.json
+echo "📝 Corrigindo tsconfig.json..."
+cat > tsconfig.json << 'EOF'
 {
   "compilerOptions": {
     "target": "ES2020",

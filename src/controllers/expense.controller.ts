@@ -1,19 +1,12 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 interface ExpenseRequest extends Request {
   user?: any;
 }
 
 export class ExpenseController {
-  /**
-   * Listar despesas
-   */
-  static async getAll(req: ExpenseRequest, res: Response): Promise<void> {
+  static async getAll(req: Request, res: Response): Promise<void> {
     try {
-      // Por enquanto retornar dados mock, depois conectar com Prisma real
       const mockExpenses = [
         {
           id: '1',
@@ -42,38 +35,23 @@ export class ExpenseController {
       res.status(200).json({
         success: true,
         data: mockExpenses,
-        pagination: {
-          page: 1,
-          limit: 10,
-          total: mockExpenses.length,
-          totalPages: 1
-        }
+        pagination: { page: 1, limit: 10, total: mockExpenses.length, totalPages: 1 }
       });
     } catch (error) {
       console.error('Get expenses error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      res.status(500).json({ success: false, message: 'Erro interno do servidor' });
     }
   }
 
-  /**
-   * Criar despesa
-   */
-  static async create(req: ExpenseRequest, res: Response): Promise<void> {
+  static async create(req: Request, res: Response): Promise<void> {
     try {
       const { description, supplier, amount, categoryId, payerId } = req.body;
 
       if (!description || !amount) {
-        res.status(400).json({
-          success: false,
-          message: 'Descrição e valor são obrigatórios'
-        });
+        res.status(400).json({ success: false, message: 'Descrição e valor são obrigatórios' });
         return;
       }
 
-      // Mock de criação - depois implementar Prisma real
       const newExpense = {
         id: Date.now().toString(),
         description,
@@ -86,29 +64,18 @@ export class ExpenseController {
         createdAt: new Date().toISOString()
       };
 
-      res.status(201).json({
-        success: true,
-        message: 'Despesa criada com sucesso',
-        data: newExpense
-      });
+      res.status(201).json({ success: true, message: 'Despesa criada com sucesso', data: newExpense });
     } catch (error) {
       console.error('Create expense error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      res.status(500).json({ success: false, message: 'Erro interno do servidor' });
     }
   }
 
-  /**
-   * Atualizar despesa
-   */
-  static async update(req: ExpenseRequest, res: Response): Promise<void> {
+  static async update(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { description, supplier, amount } = req.body;
 
-      // Mock de atualização
       const updatedExpense = {
         id,
         description: description || 'Despesa atualizada',
@@ -121,38 +88,20 @@ export class ExpenseController {
         updatedAt: new Date().toISOString()
       };
 
-      res.status(200).json({
-        success: true,
-        message: 'Despesa atualizada com sucesso',
-        data: updatedExpense
-      });
+      res.status(200).json({ success: true, message: 'Despesa atualizada com sucesso', data: updatedExpense });
     } catch (error) {
       console.error('Update expense error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      res.status(500).json({ success: false, message: 'Erro interno do servidor' });
     }
   }
 
-  /**
-   * Deletar despesa
-   */
-  static async delete(req: ExpenseRequest, res: Response): Promise<void> {
+  static async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-
-      res.status(200).json({
-        success: true,
-        message: 'Despesa excluída com sucesso',
-        data: { id }
-      });
+      res.status(200).json({ success: true, message: 'Despesa excluída com sucesso', data: { id } });
     } catch (error) {
       console.error('Delete expense error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      res.status(500).json({ success: false, message: 'Erro interno do servidor' });
     }
   }
 }

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { config } from '../config/env';
 
 interface AuthRequest extends Request {
@@ -13,9 +13,6 @@ interface JWTPayload {
   exp?: number;
 }
 
-/**
- * Middleware de autenticação JWT
- */
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
@@ -41,9 +38,8 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 
     try {
-      const decoded = jwt.verify(token, config.jwtSecret) as JWTPayload;
+      const decoded = (jwt as any).verify(token, config.jwtSecret) as JWTPayload;
       
-      // Adicionar usuário ao request
       req.user = {
         id: decoded.userId,
         email: decoded.email
@@ -51,25 +47,12 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
       next();
     } catch (jwtError) {
-      if (jwtError instanceof jwt.TokenExpiredError) {
-        res.status(401).json({
-          success: false,
-          message: 'Token expirado',
-          code: 'TOKEN_EXPIRED'
-        });
-        return;
-      }
-
-      if (jwtError instanceof jwt.JsonWebTokenError) {
-        res.status(401).json({
-          success: false,
-          message: 'Token inválido',
-          code: 'INVALID_TOKEN'
-        });
-        return;
-      }
-
-      throw jwtError;
+      res.status(401).json({
+        success: false,
+        message: 'Token inválido',
+        code: 'INVALID_TOKEN'
+      });
+      return;
     }
   } catch (error) {
     console.error('Authentication error:', error);
@@ -80,24 +63,6 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-/**
- * Middleware opcional de autenticação
- */
-export const optionalAuthenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader) {
-    next();
-    return;
-  }
-
-  // Se tem token, verificar
-  authenticate(req, res, next);
-};
-
-/**
- * Rate limiting para auth endpoints
- */
 export const authRateLimit = (maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000) => {
   const attempts = new Map<string, { count: number; resetTime: number }>();
 
@@ -105,7 +70,6 @@ export const authRateLimit = (maxAttempts: number = 5, windowMs: number = 15 * 6
     const identifier = req.ip || 'unknown';
     const now = Date.now();
     
-    // Limpar entradas expiradas
     for (const [key, value] of attempts.entries()) {
       if (now > value.resetTime) {
         attempts.delete(key);
