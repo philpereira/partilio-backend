@@ -3,13 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
-
-// Internal imports
-import { connectDatabase, disconnectDatabase } from './config/database';
 import { config } from './config/env';
-import { logger, requestLogger, errorLogger } from './utils/logger';
-import { handleUploadError } from './middleware/upload';
 import routes from './routes';
 
 /**
@@ -76,11 +70,7 @@ class Server {
 
     // Body parsing middleware
     this.app.use(express.json({ 
-      limit: '10mb',
-      verify: (req: Request, res: Response, buf: Buffer) => {
-        // Store raw body for webhook verification if needed
-        (req as any).rawBody = buf;
-      }
+      limit: '10mb'
     }));
     this.app.use(express.urlencoded({ 
       extended: true, 
@@ -94,40 +84,6 @@ class Server {
       this.app.use(morgan('combined'));
     }
 
-    // Custom request logger
-    this.app.use(requestLogger);
-
-    // Global rate limiting
-    const globalLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: config.isDevelopment ? 1000 : 100, // More requests in dev
-      message: {
-        success: false,
-        message: 'Muitas requisições. Tente novamente em 15 minutos.',
-        code: 'RATE_LIMIT_EXCEEDED'
-      },
-      standardHeaders: true,
-      legacyHeaders: false,
-      handler: (req: Request, res: Response) => {
-        logger.security('Rate limit exceeded', {
-          ip: req.ip,
-          userAgent: req.headers['user-agent'],
-          url: req.originalUrl
-        });
-
-        res.status(429).json({
-          success: false,
-          message: 'Muitas requisições. Tente novamente em 15 minutos.',
-          code: 'RATE_LIMIT_EXCEEDED'
-        });
-      }
-    });
-
-    this.app.use(globalLimiter);
-
-    // File upload error handling
-    this.app.use(handleUploadError);
-
     // Health check endpoint (before other routes)
     this.app.get('/health', (req: Request, res: Response) => {
       res.json({
@@ -140,7 +96,7 @@ class Server {
       });
     });
 
-    logger.info('Middlewares initialized successfully');
+    console.log('✅ Middlewares initialized successfully');
   }
 
   /**
@@ -152,12 +108,7 @@ class Server {
 
     // Catch all for undefined routes
     this.app.all('*', (req: Request, res: Response) => {
-      logger.warn('Route not found', {
-        method: req.method,
-        url: req.originalUrl,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
+      console.log(`❌ Route not found: ${req.method} ${req.originalUrl}`);
 
       res.status(404).json({
         success: false,
@@ -170,37 +121,26 @@ class Server {
           'POST /api/auth/login',
           'POST /api/auth/register',
           'GET /api/dashboard',
-          'GET /api/expenses',
-          'GET /api/reports/*',
-          'POST /api/csv/import',
-          'GET /api/csv/export'
+          'GET /api/expenses'
         ]
       });
     });
 
-    logger.info('Routes initialized successfully');
+    console.log('✅ Routes initialized successfully');
   }
 
   /**
    * Initialize error handling
    */
   private initializeErrorHandling(): void {
-    // Error logging middleware
-    this.app.use(errorLogger);
-
     // Global error handler
     this.app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-      const correlationId = (req as any).correlationId;
-      
-      // Log error with correlation ID
-      logger.withCorrelation(correlationId).error('Unhandled application error', error, {
-        method: req.method,
+      console.error('❌ Unhandled application error:', {
+        message: error.message,
+        stack: error.stack,
         url: req.originalUrl,
-        statusCode: res.statusCode,
-        userId: (req as any).user?.id,
-        body: req.body,
-        query: req.query,
-        params: req.params
+        method: req.method,
+        timestamp: new Date().toISOString()
       });
 
       // Determine status code
@@ -222,152 +162,82 @@ class Server {
         success: false,
         message: config.isDevelopment ? error.message : 'Erro interno do servidor',
         timestamp: new Date().toISOString(),
-        correlationId
       };
 
-      // Add development-specific error details
+      // Add debug info in development
       if (config.isDevelopment) {
-        errorResponse.error = {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        };
-        errorResponse.request = {
-          method: req.method,
+        errorResponse.error = error.message;
+        errorResponse.stack = error.stack;
+        errorResponse.details = {
           url: req.originalUrl,
-          headers: req.headers,
-          body: req.body,
-          query: req.query,
-          params: req.params
+          method: req.method,
         };
       }
 
       res.status(statusCode).json(errorResponse);
     });
 
-    logger.info('Error handling initialized successfully');
+    console.log('✅ Error handling initialized successfully');
   }
 
   /**
    * Start the server
    */
-  public async start(): Promise<void> {
-    try {
-      // Connect to database
-      logger.info('Connecting to database...');
-      await connectDatabase();
-      logger.info('Database connected successfully');
+  public start(): void {
+    const server = this.app.listen(this.port, () => {
+      console.log(`
+🚀 Partilio API Server Started Successfully!
+   
+📍 Environment: ${config.nodeEnv}
+🌐 Server: http://localhost:${this.port}
+🔗 Health Check: http://localhost:${this.port}/health
+📚 API Base: http://localhost:${this.port}/api
 
-      // Start HTTP server
-      const server = this.app.listen(this.port, () => {
-        logger.info(`🚀 Server started successfully`, {
-          port: this.port,
-          environment: config.nodeEnv,
-          version: process.env.npm_package_version || '1.0.0',
-          corsOrigin: config.corsOrigin,
-          logLevel: process.env.LOG_LEVEL || 'info'
-        });
+🔐 CORS Origin: ${config.corsOrigin}
+⏰ Started at: ${new Date().toISOString()}
 
-        if (config.isDevelopment) {
-          console.log(`
-🏦 Partilio Backend API
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌐 API Server:     http://localhost:${this.port}
-📊 Health Check:   http://localhost:${this.port}/health
-📖 API Docs:       http://localhost:${this.port}/api/health
-🗄️  Database:       ${config.databaseUrl.split('@')[1] || 'Connected'}
-🛡️  CORS Origin:    ${config.corsOrigin}
-📝 Log Level:      ${process.env.LOG_LEVEL || 'info'}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Deploy Status: READY FOR DEPLOYMENT! 🚀
+      `);
+    });
 
-📋 Available Endpoints:
-   🔐 Authentication:     POST /api/auth/login
-   👥 User Management:    GET  /api/auth/profile
-   📊 Dashboard:          GET  /api/dashboard
-   💰 Expenses:           GET  /api/expenses
-   🏷️  Categories:        GET  /api/categories
-   💳 Credit Cards:       GET  /api/credit-cards
-   👤 Payers:             GET  /api/payers
-   📈 Reports:            GET  /api/reports/*
-   📄 CSV Import/Export:  POST /api/csv/import
-                         GET  /api/csv/export
-
-🚀 Ready to handle requests!
-          `);
-        }
+    // Graceful shutdown handler
+    const gracefulShutdown = (signal: string) => {
+      console.log(`\n${signal} received. Starting graceful shutdown...`);
+      
+      server.close(() => {
+        console.log('✅ HTTP server closed.');
+        process.exit(0);
       });
-
-      // Graceful shutdown handlers
-      this.setupGracefulShutdown(server);
-
-    } catch (error) {
-      logger.error('Failed to start server', error as Error);
-      process.exit(1);
-    }
-  }
-
-  /**
-   * Setup graceful shutdown handling
-   */
-  private setupGracefulShutdown(server: any): void {
-    const gracefulShutdown = async (signal: string) => {
-      logger.info(`Received ${signal}, starting graceful shutdown...`);
-
-      // Stop accepting new requests
-      server.close(async () => {
-        logger.info('HTTP server closed');
-
-        try {
-          // Close database connections
-          await disconnectDatabase();
-          logger.info('Database disconnected');
-
-          // Exit process
-          logger.info('Graceful shutdown completed');
-          process.exit(0);
-        } catch (error) {
-          logger.error('Error during shutdown', error as Error);
-          process.exit(1);
-        }
-      });
-
-      // Force shutdown after timeout
+      
+      // Force close after 10 seconds
       setTimeout(() => {
-        logger.error('Could not close connections in time, forcefully shutting down');
+        console.error('❌ Could not close connections in time, forcefully shutting down');
         process.exit(1);
-      }, 30000); // 30 seconds timeout
+      }, 10000);
     };
 
-    // Listen for shutdown signals
+    // Handle shutdown signals
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-    // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
-      logger.error('Uncaught Exception', error);
-      gracefulShutdown('UNCAUGHT_EXCEPTION');
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+      console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+      if (config.isDevelopment) {
+        process.exit(1);
+      }
     });
 
-    // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled Rejection', new Error(String(reason)), {
-        reason,
-        promise: promise.toString()
-      });
-      gracefulShutdown('UNHANDLED_REJECTION');
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (error: Error) => {
+      console.error('❌ Uncaught Exception:', error);
+      gracefulShutdown('UNCAUGHT_EXCEPTION');
     });
   }
 }
 
-// Create and export server instance
+// Create and start server
 const server = new Server();
-
-// Start server if this file is run directly
-if (require.main === module) {
-  server.start().catch((error) => {
-    logger.error('Failed to start application', error as Error);
-    process.exit(1);
-  });
-}
+server.start();
 
 export default server.app;
