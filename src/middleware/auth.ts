@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { config } from '../config/env';
 
-interface AuthRequest extends Request {
-  user?: any;
-}
-
 interface JWTPayload {
   userId: string;
   email: string;
@@ -13,7 +9,7 @@ interface JWTPayload {
   exp?: number;
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -40,7 +36,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     try {
       const decoded = (jwt as any).verify(token, config.jwtSecret) as JWTPayload;
       
-      req.user = {
+      (req as any).user = {
         id: decoded.userId,
         email: decoded.email
       };

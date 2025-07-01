@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -8,28 +8,18 @@ import routes from './routes';
 
 const app = express();
 
-// Security middleware
 app.use(helmet());
 app.use(compression());
-
-// CORS configuration
-app.use(cors({
-  origin: config.corsOrigin,
-  credentials: true,
-}));
-
-// Request parsing
+app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Logging
 if (config.isDevelopment) {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined'));
 }
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -40,28 +30,24 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
 app.use('/api', routes);
 
-// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Endpoint not found',
+    message: 'Endpoint não encontrado',
     path: req.originalUrl
   });
 });
 
-// Error handler
 app.use((error: any, req: any, res: any, next: any) => {
   console.error('Error:', error);
   res.status(error.status || 500).json({
     success: false,
-    message: config.isDevelopment ? error.message : 'Internal server error'
+    message: config.isDevelopment ? error.message : 'Erro interno do servidor'
   });
 });
 
-// Start server
 const PORT = config.port;
 app.listen(PORT, () => {
   console.log(`🚀 Partilio API Server running on port ${PORT}`);
