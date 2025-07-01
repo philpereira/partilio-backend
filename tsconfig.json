@@ -14,8 +14,7 @@
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": false,
-    "removeComments": true,
-    "types": ["node"]
+    "removeComments": true
   },
   "include": [
     "src/**/*"
