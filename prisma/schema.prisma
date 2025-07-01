@@ -1,10 +1,13 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
-  provider = prisma-client-js
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = postgresql
-  url      = env(DATABASE_URL)
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -15,12 +18,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relacionamentos
   payers      Payer[]
   categories  Category[]
   creditCards CreditCard[]
   expenses    Expense[]
 
-  @@map(users)
+  @@map("users")
 }
 
 model Payer {
@@ -30,102 +34,111 @@ model Payer {
   active Boolean @default(true)
   userId String
 
-  user               User       @relation(fields [userId], references [id], onDelete Cascade)
-  expensesBuyer      Expense[]  @relation(ExpenseBuyer)
-  expensesPayer      Expense[]  @relation(ExpensePayer)
+  // Relacionamentos
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expensesBuyer      Expense[]        @relation("ExpenseBuyer")
+  expensesPayer      Expense[]        @relation("ExpensePayer")
   expenseSplits      ExpenseSplit[]
   creditCards        CreditCard[]
 
-  @@map(payers)
+  @@map("payers")
 }
 
 model Category {
-  id           String  @id @default(cuid())
-  name         String
-  icon         String
-  color        String
-  userId       String
+  id     String @id @default(cuid())
+  name   String
+  icon   String
+  color  String
+  userId String
   
-  user         User         @relation(fields [userId], references [id], onDelete Cascade)
+  // Relacionamentos
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   subcategories Subcategory[]
-  expenses     Expense[]
+  expenses      Expense[]
 
-  @@map(categories)
+  @@map("categories")
 }
 
 model Subcategory {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   name       String
-  icon       String
+  icon       String?
   categoryId String
 
-  category Category @relation(fields [categoryId], references [id], onDelete Cascade)
+  // Relacionamentos
+  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   expenses Expense[]
 
-  @@map(subcategories)
+  @@map("subcategories")
 }
 
 model CreditCard {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   holder      String
   closingDay  Int
   dueDay      Int
-  limit       Decimal @db.Decimal(10, 2)
-  active      Boolean @default(true)
+  limit       Decimal? @db.Decimal(10, 2)
+  active      Boolean  @default(true)
   userId      String
   payerId     String
 
-  user     User      @relation(fields [userId], references [id], onDelete Cascade)
-  payer    Payer     @relation(fields [payerId], references [id])
+  // Relacionamentos
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payer    Payer     @relation(fields: [payerId], references: [id])
   expenses Expense[]
 
-  @@map(credit_cards)
+  @@map("credit_cards")
 }
 
 model Expense {
-  id                    String            @id @default(cuid())
+  id                    String      @id @default(cuid())
   description           String
   supplier              String
   type                  ExpenseType
-  totalAmount           Decimal           @db.Decimal(10, 2)
-  installmentAmount     Decimal           @db.Decimal(10, 2)
-  numberOfMonths        Int
+  totalAmount           Decimal     @db.Decimal(10, 2)
+  installmentAmount     Decimal     @db.Decimal(10, 2)
+  numberOfMonths        Int?
   startDate             DateTime
   dueDate               String
-  purchaseDate          DateTime
+  purchaseDate          DateTime?
   
-  isInstallment         Boolean           @default(false)
-  numberOfInstallments  Int
-  currentInstallment    Int              @default(1)
+  // Installment info
+  isInstallment         Boolean @default(false)
+  numberOfInstallments  Int?
+  currentInstallment    Int?    @default(1)
   
+  // Responsibility
   buyerId               String
-  payerId               String
-  isDivided             Boolean           @default(false)
+  payerId               String?
+  isDivided             Boolean @default(false)
   
-  active                Boolean           @default(true)
-  paused                Boolean           @default(false)
-  notes                 String
+  // Control
+  active                Boolean @default(true)
+  paused                Boolean @default(false)
+  notes                 String?
   
+  // Relations
   userId       String
   categoryId   String
-  subcategoryId String
-  creditCardId String
+  subcategoryId String?
+  creditCardId String?
   
-  user         User          @relation(fields [userId], references [id], onDelete Cascade)
-  category     Category      @relation(fields [categoryId], references [id])
-  subcategory  Subcategory  @relation(fields [subcategoryId], references [id])
-  creditCard   CreditCard   @relation(fields [creditCardId], references [id])
-  buyer        Payer         @relation(ExpenseBuyer, fields [buyerId], references [id])
-  payer        Payer        @relation(ExpensePayer, fields [payerId], references [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category      @relation(fields: [categoryId], references: [id])
+  subcategory  Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  creditCard   CreditCard?   @relation(fields: [creditCardId], references: [id])
+  buyer        Payer         @relation("ExpenseBuyer", fields: [buyerId], references: [id])
+  payer        Payer?        @relation("ExpensePayer", fields: [payerId], references: [id])
   
+  // Related data
   splits       ExpenseSplit[]
   payments     ExpensePayment[]
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  @@map(expenses)
+  @@map("expenses")
 }
 
 model ExpenseSplit {
@@ -135,30 +148,32 @@ model ExpenseSplit {
   percentage Decimal @db.Decimal(5, 2)
   amount     Decimal @db.Decimal(10, 2)
 
-  expense Expense @relation(fields [expenseId], references [id], onDelete Cascade)
-  payer   Payer   @relation(fields [payerId], references [id])
+  // Relacionamentos
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  payer   Payer   @relation(fields: [payerId], references: [id])
 
   @@unique([expenseId, payerId])
-  @@map(expense_splits)
+  @@map("expense_splits")
 }
 
 model ExpensePayment {
-  id        String            @id @default(cuid())
+  id        String               @id @default(cuid())
   expenseId String
   month     Int
   year      Int
   status    ExpensePaymentStatus @default(PENDING)
-  amount    Decimal           @db.Decimal(10, 2)
-  paidAt    DateTime
+  amount    Decimal              @db.Decimal(10, 2)
+  paidAt    DateTime?
   dueDate   DateTime
 
-  expense Expense @relation(fields [expenseId], references [id], onDelete Cascade)
+  // Relacionamentos
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([expenseId, month, year])
-  @@map(expense_payments)
+  @@map("expense_payments")
 }
 
 enum ExpenseType {
