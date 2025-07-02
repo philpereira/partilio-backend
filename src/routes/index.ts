@@ -29,8 +29,9 @@ router.get('/health', (req: Request, res: Response) => {
 const authRouter = Router();
 
 // Rotas públicas de auth (com rate limiting)
-authRouter.post('/login', authRateLimit(5, 15 * 60 * 1000), AuthController.login);
-authRouter.post('/register', authRateLimit(3, 15 * 60 * 1000), AuthController.register);
+authRouter.post('/register', AuthController.register);
+authRouter.post('/login', AuthController.login);
+
 
 // Rotas protegidas de auth
 authRouter.get('/verify-token', authenticate, AuthController.verifyToken);
