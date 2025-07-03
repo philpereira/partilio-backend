@@ -5,7 +5,7 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || 'desenvolvimento-jwt-secret-super-longo-e-seguro-32-chars',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  // Permitir múltiplas origens separadas por vírgula
+    // Permitir múltiplas origens separadas por vírgula
   corsOrigin: (process.env.CORS_ORIGIN || 'http://localhost:3000')
     .split(',')
     .map(origin => origin.trim()),
