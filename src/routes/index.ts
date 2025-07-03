@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate, authRateLimit } from '../middleware/auth';
 
 // Import controllers - FIX: Imports corretos
-import { AuthController } from '../controllers/auth.controller';
+import AuthController from '../controllers/auth.controller';
 import { ExpenseController } from '../controllers/expense.controller';
 import { CategoryController } from '../controllers/category.controller';
 import { DashboardController } from '../controllers/dashboard.controller';
