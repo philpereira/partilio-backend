@@ -31,6 +31,7 @@ const authRouter = Router();
 // Rotas públicas de auth (com rate limiting)
 authRouter.post('/register', AuthController.register);
 authRouter.post('/login', AuthController.login);
+authRouter.post('/register', AuthController.register);  // ← VERIFICAR se esta linha existe
 
 
 // Rotas protegidas de auth
